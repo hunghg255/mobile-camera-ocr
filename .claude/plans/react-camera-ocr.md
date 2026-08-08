@@ -308,6 +308,7 @@ Project scaffold + UI foundation
 - Clear all có hộp thoại xác nhận để tránh mất dữ liệu ngoài ý muốn.
 - Chỉ lưu text, thời gian và language codes; không lưu ảnh để tránh nhanh đầy `localStorage`.
 - History dùng card mobile-first với Copy/Delete hiển thị rõ, text dài có Xem thêm/Thu gọn và không phụ thuộc vào swipe gesture.
+- Sau OCR phải mở dialog review với textarea cho phép chỉnh sửa; chỉ submit nội dung không rỗng mới tạo item và lưu `localStorage`, còn cancel/đóng dialog sẽ bỏ kết quả tạm.
 
 ## Parallelization Opportunities
 

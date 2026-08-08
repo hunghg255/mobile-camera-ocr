@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react"
 import { Camera, CheckCircle2, LoaderCircle, ScanText, ShieldCheck, Sparkles, TriangleAlert } from "lucide-react"
 import { CameraPreview, type CameraPreviewHandle } from "@/components/camera-preview"
 import { LanguagePicker } from "@/components/language-picker"
+import { ReviewScanDialog } from "@/components/review-scan-dialog"
 import { ScanHistory } from "@/components/scan-history"
 import { Button } from "@/components/ui/button"
 import { useScanHistory } from "@/hooks/use-scan-history"
@@ -10,6 +11,7 @@ import { loadSelectedLanguages, saveSelectedLanguages } from "@/lib/scan-storage
 import type { ScanItem } from "@/types/scan"
 
 type ScanStatus = "idle" | "scanning" | "success" | "empty" | "error"
+type PendingScan = Pick<ScanItem, "text" | "languages">
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -34,6 +36,7 @@ function App() {
   const [scanStatus, setScanStatus] = useState<ScanStatus>("idle")
   const [statusMessage, setStatusMessage] = useState("")
   const [progress, setProgress] = useState(0)
+  const [pendingScan, setPendingScan] = useState<PendingScan | null>(null)
   const { items, addItem, removeItem, clearAll, persistenceError } = useScanHistory()
 
   const handleCameraReady = useCallback((ready: boolean) => setCameraReady(ready), [])
@@ -69,17 +72,13 @@ function App() {
         return
       }
 
-      const item: ScanItem = {
-        id: createId(),
+      setPendingScan({
         text,
-        createdAt: new Date().toISOString(),
         languages: [...selectedLanguages],
-      }
-      addItem(item)
+      })
       setProgress(1)
-      setScanStatus("success")
-      setStatusMessage("Đã nhận diện và lưu kết quả.")
-      window.setTimeout(() => historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120)
+      setScanStatus("idle")
+      setStatusMessage("")
     } catch (error) {
       console.error("OCR failed", error)
       setScanStatus("error")
@@ -89,6 +88,21 @@ function App() {
           : "Cần kết nối mạng để tải gói ngôn ngữ lần đầu.",
       )
     }
+  }
+
+  const handleReviewSubmit = (text: string) => {
+    if (!pendingScan) return
+    const item: ScanItem = {
+      id: createId(),
+      text,
+      createdAt: new Date().toISOString(),
+      languages: pendingScan.languages,
+    }
+    addItem(item)
+    setPendingScan(null)
+    setScanStatus("success")
+    setStatusMessage("Đã lưu nội dung vào danh sách.")
+    window.setTimeout(() => historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 120)
   }
 
   const isScanning = scanStatus === "scanning"
@@ -164,6 +178,19 @@ function App() {
       <footer className="mx-auto mt-8 max-w-xl px-4 text-center text-xs leading-5 text-slate-400 sm:px-6">
         Ảnh không được tải lên máy chủ. Language pack chỉ được tải khi cần.
       </footer>
+
+      {pendingScan && (
+        <ReviewScanDialog
+          open
+          initialText={pendingScan.text}
+          languages={pendingScan.languages}
+          onCancel={() => {
+            setPendingScan(null)
+            setScanStatus("idle")
+          }}
+          onSubmit={handleReviewSubmit}
+        />
+      )}
     </div>
   )
 }
