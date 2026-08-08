@@ -11,3 +11,4 @@
 - Automated browser, lint, unit/component, and production-build checks are part of final QA. A real iOS/Android camera still requires an HTTPS device test.
 - Visual browser QA could not run in this workspace session because no in-app or extension browser instance was available; this is kept as an explicit manual follow-up rather than reported as verified.
 - OCR output now enters a temporary review dialog first. The app creates and persists a `ScanItem` only after the user submits non-empty edited text; closing or cancelling the dialog discards that pending result.
+- The original guide overlay was visual-only while OCR received the full video frame. Capture now maps the visible guide through the video's `object-cover` scale/offset and sends only that source crop to OCR.

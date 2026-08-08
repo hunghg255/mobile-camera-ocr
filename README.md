@@ -4,6 +4,8 @@
 
 Sau khi OCR hoàn tất, ứng dụng mở dialog để người dùng kiểm tra và chỉnh sửa nội dung. Chỉ khi bấm **Lưu kết quả**, nội dung mới được thêm vào danh sách và `localStorage`; đóng hoặc hủy dialog sẽ bỏ kết quả tạm.
 
+OCR chỉ nhận vùng nằm bên trong khung trắng trên camera. Phép crop có tính đến `object-cover`, nên vùng gửi tới OCR khớp với khung hiển thị dù camera và màn hình có tỉ lệ khác nhau.
+
 ## Công nghệ
 
 - Vite, React và TypeScript

@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { Camera, CameraOff, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { calculateObjectCoverCrop } from "@/lib/camera-crop"
 
 export interface CameraPreviewHandle {
   capture: () => HTMLCanvasElement | null
@@ -25,6 +26,7 @@ function cameraErrorMessage(error: unknown) {
 export const CameraPreview = forwardRef<CameraPreviewHandle, CameraPreviewProps>(
   ({ onReadyChange }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null)
+    const guideRef = useRef<HTMLDivElement>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const [status, setStatus] = useState<CameraStatus>("loading")
     const [error, setError] = useState("")
@@ -98,13 +100,30 @@ export const CameraPreview = forwardRef<CameraPreviewHandle, CameraPreviewProps>
     useImperativeHandle(ref, () => ({
       capture() {
         const video = videoRef.current
-        if (!video || status !== "ready" || !video.videoWidth || !video.videoHeight) return null
+        const guide = guideRef.current
+        if (!video || !guide || status !== "ready" || !video.videoWidth || !video.videoHeight) return null
+        const crop = calculateObjectCoverCrop(
+          video.videoWidth,
+          video.videoHeight,
+          video.getBoundingClientRect(),
+          guide.getBoundingClientRect(),
+        )
         const canvas = document.createElement("canvas")
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
+        canvas.width = crop.width
+        canvas.height = crop.height
         const context = canvas.getContext("2d")
         if (!context) return null
-        context.drawImage(video, 0, 0, canvas.width, canvas.height)
+        context.drawImage(
+          video,
+          crop.x,
+          crop.y,
+          crop.width,
+          crop.height,
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        )
         return canvas
       },
     }), [status])
@@ -123,14 +142,14 @@ export const CameraPreview = forwardRef<CameraPreviewHandle, CameraPreviewProps>
         {status === "ready" && (
           <>
             <div className="camera-vignette" aria-hidden="true" />
-            <div className="scan-guide" aria-hidden="true">
+            <div ref={guideRef} className="scan-guide" aria-hidden="true">
               <span className="corner corner-tl" />
               <span className="corner corner-tr" />
               <span className="corner corner-bl" />
               <span className="corner corner-br" />
             </div>
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-slate-950/65 px-3 py-1.5 text-xs font-medium text-white backdrop-blur">
-              Đặt chữ vào trong khung
+              Chỉ quét chữ trong khung
             </div>
           </>
         )}
